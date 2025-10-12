@@ -20,8 +20,10 @@ def callback():
 
         # メッセージに応じてPicoに送信
         if message == "test1":
+            print("Calling send_to_pico with test1")  # ← 追加
             send_to_pico("test1")
         elif message == "test2":
+            print("Calling send_to_pico with test2")  # ← 追加
             send_to_pico("test2")
         else:
             print("Unknown command")
