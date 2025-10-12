@@ -32,7 +32,7 @@ def callback():
     return "OK", 200
 
 def send_to_pico(command):
-    pico_ip = "http://192.168.1.14"  # ← Pico WのIPアドレスに置き換えてください
+    pico_ip = "http://192.168.1.14"
     payload = {
         "events": [
             {
@@ -43,11 +43,11 @@ def send_to_pico(command):
         ]
     }
     try:
-        res = requests.post(pico_ip, json=payload, timeout=2)
-        print("Pico response:", res.text)
+        res = requests.post(pico_ip, json=payload, headers={"Content-Type": "application/json"}, timeout=2)
+        print("Status code:", res.status_code)
+        print("Response text:", res.text)
     except Exception as e:
         print("Failed to send to Pico:", e)
-
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
