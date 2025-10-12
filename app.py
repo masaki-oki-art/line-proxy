@@ -1,21 +1,18 @@
-from flask import Flask, request
-import os
+import requests
 
-app = Flask(__name__)
-
-@app.route("/", methods=["GET"])
-def index():
-    return "LINE Proxy is running!"
-
-@app.route("/callback", methods=["POST"])
-def callback():
-    # LINEからのWebhookを受け取ってログに出力
-    print("=== LINE Webhook Received ===")
-    print("Headers:", dict(request.headers))
-    print("Body:", request.get_data(as_text=True))
-    return "OK", 200
-
-if __name__ == "__main__":
-    # Renderが割り当てるポート番号を取得して起動
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+def send_to_pico(message_text):
+    pico_ip = "http://192.168.1.14"  # Pico WのIP
+    payload = {
+        "events": [
+            {
+                "message": {
+                    "text": message_text
+                }
+            }
+        ]
+    }
+    try:
+        res = requests.post(pico_ip, json=payload, timeout=2)
+        print("Pico response:", res.text)
+    except Exception as e:
+        print("Error sending to Pico:", e)
