@@ -10,12 +10,12 @@ def index():
 
 @app.route("/callback", methods=["POST"])
 def callback():
-    data = request.get_json()
     print("=== LINE Webhook Received ===")
-    print("Raw request data:", request.data)  # ← 追加
-    print("Parsed JSON:", data)               # ← 追加
-
+    print("Raw request body:", request.data)  # ← 生のバイト列
     try:
+        data = request.get_json(force=True)  # ← force=True で強制パース
+        print("Parsed JSON:", data)
+
         event = data["events"][0]
         if event["type"] == "message" and event["message"]["type"] == "text":
             message = event["message"]["text"]
@@ -35,7 +35,6 @@ def callback():
         print("Error parsing message:", e)
 
     return "OK", 200
-
 def send_to_pico(command):
     pico_ip = "http://192.168.1.14"
     payload = {
