@@ -1,10 +1,8 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request
 import os
+import requests
 
 app = Flask(__name__)
-
-# 最新メッセージを保存する変数（グローバル）
-latest_message = {"text": ""}
 
 @app.route("/", methods=["GET"])
 def index():
@@ -28,8 +26,7 @@ def callback():
             print("User message:", message, flush=True)
 
             if message in ["test1", "test2"]:
-                latest_message["text"] = message  # 保存
-                print("Message stored:", message, flush=True)
+                send_to_pico(message)
             else:
                 print("Unknown command", flush=True)
         else:
@@ -39,9 +36,23 @@ def callback():
 
     return "OK", 200
 
-@app.route("/latest", methods=["GET"])
-def latest():
-    return jsonify(latest_message)
+def send_to_pico(command):
+    pico_ip = "http://<グローバルIPまたはDDNS>:80"  # ← ここをポートフォワーディングで公開したIPに変更
+    payload = {
+        "events": [
+            {
+                "message": {
+                    "text": command
+                }
+            }
+        ]
+    }
+    try:
+        res = requests.post(pico_ip, json=payload, headers={"Content-Type": "application/json"}, timeout=2)
+        print("Status code:", res.status_code)
+        print("Response text:", res.text)
+    except Exception as e:
+        print("Failed to send to Pico:", e)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
