@@ -10,29 +10,29 @@ def index():
 
 @app.route("/callback", methods=["POST"])
 def callback():
-    print("=== LINE Webhook Received ===")
-    print("Raw request body:", request.data, flush=True)  # ← 生のバイト列
+    print("=== LINE Webhook Received ===", flush=True)
+    raw_body = request.data.decode("utf-8")
+    print("Raw body:", raw_body, flush=True)
+
     try:
-        data = request.get_json(force=True)  # ← force=True で強制パース
-        print("Parsed JSON:", data)
+        data = request.get_json(silent=True)
+        if not data or "events" not in data:
+            print("Invalid JSON structure", flush=True)
+            return "Bad Request", 400
 
         event = data["events"][0]
-        if event["type"] == "message" and event["message"]["type"] == "text":
-            message = event["message"]["text"]
-            print("User message:", message)
+        if event.get("type") == "message" and event["message"].get("type") == "text":
+            message = event["message"]["text"].lower()
+            print("User message:", message, flush=True)
 
-            if message == "test1":
-                print("Calling send_to_pico with test1")
-                send_to_pico("test1")
-            elif message == "test2":
-                print("Calling send_to_pico with test2")
-                send_to_pico("test2")
+            if message in ["test1", "test2"]:
+                send_to_pico(message)
             else:
-                print("Unknown command")
+                print("Unknown command", flush=True)
         else:
-            print("Non-text message received, skipping")
+            print("Non-text message received", flush=True)
     except Exception as e:
-        print("Error parsing message:", e)
+        print("Error parsing message:", type(e), e, flush=True)
 
     return "OK", 200
 def send_to_pico(command):
