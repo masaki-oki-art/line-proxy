@@ -15,23 +15,27 @@ def callback():
     print("Body:", data)
 
     try:
-        message = data["events"][0]["message"]["text"]
-        print("User message:", message)
+        event = data["events"][0]
+        if event["type"] == "message" and event["message"]["type"] == "text":
+            message = event["message"]["text"]
+            print("User message:", message)
 
-        # メッセージに応じてPicoに送信
-        if message == "test1":
-            print("Calling send_to_pico with test1")  # ← 追加
-            send_to_pico("test1")
-        elif message == "test2":
-            print("Calling send_to_pico with test2")  # ← 追加
-            send_to_pico("test2")
+            if message == "test1":
+                print("Calling send_to_pico with test1")
+                send_to_pico("test1")
+            elif message == "test2":
+                print("Calling send_to_pico with test2")
+                send_to_pico("test2")
+            else:
+                print("Unknown command")
         else:
-            print("Unknown command")
-
+            print("Non-text message received, skipping")
     except Exception as e:
         print("Error parsing message:", e)
 
     return "OK", 200
+
+
 
 def send_to_pico(command):
     pico_ip = "http://192.168.1.14"
