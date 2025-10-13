@@ -12,7 +12,8 @@ def index():
 def callback():
     data = request.get_json()
     print("=== LINE Webhook Received ===")
-    print("Body:", data)
+    print("Raw request data:", request.data)  # ← 追加
+    print("Parsed JSON:", data)               # ← 追加
 
     try:
         event = data["events"][0]
@@ -34,8 +35,6 @@ def callback():
         print("Error parsing message:", e)
 
     return "OK", 200
-
-
 
 def send_to_pico(command):
     pico_ip = "http://192.168.1.14"
