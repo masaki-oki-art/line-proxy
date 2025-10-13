@@ -11,7 +11,7 @@ def index():
 @app.route("/callback", methods=["POST"])
 def callback():
     print("=== LINE Webhook Received ===")
-    print("Raw request body:", request.data)  # ← 生のバイト列
+    print("Raw request body:", request.data, flush=True)  # ← 生のバイト列
     try:
         data = request.get_json(force=True)  # ← force=True で強制パース
         print("Parsed JSON:", data)
