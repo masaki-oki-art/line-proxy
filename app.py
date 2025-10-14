@@ -1,4 +1,3 @@
-import os
 import logging
 from flask import Flask, request
 import requests
@@ -33,8 +32,3 @@ def callback():
         logging.error("Error parsing message: %s", e)
 
     return "OK", 200
-
-if __name__ == "__main__":
-    # Renderが検出できるように、hostとportを明示的に指定
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
