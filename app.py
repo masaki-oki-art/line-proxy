@@ -1,30 +1,40 @@
+import os
+import logging
 from flask import Flask, request
 import requests
+
+# ログ設定（Renderのログ画面に出力される）
+logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 
 @app.route("/", methods=["GET"])
 def index():
-    return "Render is running"
+    return "Render Flask is running"
 
 @app.route("/callback", methods=["POST"])
 def callback():
-    data = request.get_json(silent=True)
-    if not data or "events" not in data:
-        return "Bad Request", 400
+    data = request.get_json()
+    logging.info("Raw data: %s", data)
 
-    message = data["events"][0]["message"]["text"]
-    print("LINE message:", message)
-
-    # PicoのグローバルIP＋ポート7072に送信
-    pico_url = "http://133.207.116.194:7072"  # ← ここを最新IPに変更
     try:
-        res = requests.post(pico_url, json=data, timeout=2)
-        print("Pico response:", res.status_code)
+        event = data["events"][0]
+        if event["type"] == "message" and "text" in event["message"]:
+            message = event["message"]["text"]
+            logging.info("LINE message: %s", message)
+
+            # PicoのグローバルIP＋ポート7072に送信
+            pico_url = "http://133.207.116.194:7072"  # ← 最新のIPに置き換えてください
+            res = requests.post(pico_url, json=data, timeout=2)
+            logging.info("Pico response: %s", res.status_code)
+        else:
+            logging.info("非テキストメッセージを受信しました")
     except Exception as e:
-        print("Error sending to Pico:", e)
+        logging.error("Error parsing message: %s", e)
 
     return "OK", 200
 
 if __name__ == "__main__":
-    app.run()
+    # Renderが検出できるように、hostとportを明示的に指定
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
