@@ -6,19 +6,16 @@ app = Flask(__name__)
 @app.route("/callback", methods=["POST"])
 def webhook():
     data = request.json
-    user_message = data["events"][0]["message"]["text"]
+    user_message = data["events"][0]["message"]["text"].strip()
 
-    # <pico_IPはローカルIPに書き換え>
-    if user_message.upper() == "ON":
-        requests.post("http://192.168.1.16", json={"command": "ON"})
-    elif user_message.upper() == "OFF":
-        requests.post("http://192.168.1.16", json={"command": "OFF"})
+    # PICOにそのままメッセージを渡す
+    try:
+        requests.post("http://192.168.1.16", json={"message": user_message})
+    except Exception as e:
+        print("PICO転送エラー:", e)
 
     return "OK"
 
 @app.route("/")
 def index():
     return "Flask app is running."
-
-# if __name__ == "__main__":
-#     app.run()  # 開発用サーバー起動は本番環境では不要
