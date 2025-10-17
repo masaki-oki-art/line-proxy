@@ -10,7 +10,7 @@ def webhook():
 
     # PICOにそのままメッセージを渡す
     try:
-        requests.post("http://192.168.1.16", json={"message": user_message})
+        requests.post("http://133.207.116.194", json={"message": user_message})
     except Exception as e:
         print("PICO転送エラー:", e)
 
