@@ -10,9 +10,9 @@ def webhook():
 
     # <pico_IPはローカルIPに書き換え>
     if user_message.upper() == "ON":
-        requests.post("http://192.161.1.16/led/on")
+        requests.post("http://192.168.1.16/led/on")
     elif user_message.upper() == "OFF":
-        requests.post("http://192.161.1.16/led/off")
+        requests.post("http://192.168.1.16/led/off")
 
     return "OK"
 
