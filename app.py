@@ -1,34 +1,23 @@
-import logging
 from flask import Flask, request
 import requests
 
-# ログ設定（Renderのログ画面に出力される）
-logging.basicConfig(level=logging.INFO)
-
 app = Flask(__name__)
 
-@app.route("/", methods=["GET"])
-def index():
-    return "Render Flask is running"
 
-@app.route("/callback", methods=["POST"])
-def callback():
-    data = request.get_json()
-    logging.info("Raw data: %s", data)
+@app.route("/webhook", methods=["POST"])
+def webhook():
+    data = request.json
+    user_message = data["events"][0]["message"]["text"]
 
-    try:
-        event = data["events"][0]
-        if event["type"] == "message" and "text" in event["message"]:
-            message = event["message"]["text"]
-            logging.info("LINE message: %s", message)
+#If you send 'ON' via LINE, it will command the Pico W via HTTP.
+    #<pico_IPはローカルIPに書き換え>
+    
+    if user_message.upper() == "ON":
+        requests.post("http://<PICO_IP>/led/on")
+    elif user_message.upper() == "OFF":
+        requests.post("http://<PICO_IP>/led/off")
 
-            # PicoのグローバルIP＋ポート7072に送信
-            pico_url = "http://133.207.116.194:7072"  # ← 最新のIPに置き換えてください
-            res = requests.post(pico_url, json=data, timeout=2)
-            logging.info("Pico response: %s", res.status_code)
-        else:
-            logging.info("非テキストメッセージを受信しました")
-    except Exception as e:
-        logging.error("Error parsing message: %s", e)
+    return "OK"
 
-    return "OK", 200
+#if __name__ == "__main__":   #開発用コードのためコメントアウト
+#    app.run()
