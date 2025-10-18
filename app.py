@@ -1,25 +1,34 @@
+import logging
 from flask import Flask, request
 import requests
 
+# ログ設定（Renderのログ画面に出力される）
+logging.basicConfig(level=logging.INFO)
+
 app = Flask(__name__)
 
-LINE_TOKEN = "rrH3WhwKaEfMmKZonTs95+4OZIj1GxObEHCEugdrJUzDPRaNDigD3lPAQNbZojMgjA8Pd599qrRxl6cYLXVU8GWHQRmAudHAEvzT2juBRX2Cur1GFJ9MFINSdNJK/C1G8y6vqdjfpyFWaLg5kxM3hgdB04t89/1O/w1cDnyilFU="
-LINE_TO = "U71acf266adcc910ec114580ae9746b13"
+@app.route("/", methods=["GET"])
+def index():
+    return "Render Flask is running"
 
-@app.route("/notify", methods=["POST"])
-def notify():
+@app.route("/callback", methods=["POST"])
+def callback():
     data = request.get_json()
-    message = data.get("message", "（メッセージなし）")
+    logging.info("Raw data: %s", data)
 
-    headers = {
-        "Authorization": "Bearer " + LINE_TOKEN,
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "to": LINE_TO,
-        "messages": [{"type": "text", "text": message}]
-    }
+    try:
+        event = data["events"][0]
+        if event["type"] == "message" and "text" in event["message"]:
+            message = event["message"]["text"]
+            logging.info("LINE message: %s", message)
 
-    res = requests.post("https://api.line.me/v2/bot/message/push", headers=headers, json=payload)
-    print("LINE送信ステータス:", res.status_code)
-    return "OK"
+            # PicoのグローバルIP＋ポート7072に送信
+            pico_url = "http://117.74.28.188:8080"  # ← 最新のIPに置き換えてください
+            res = requests.post(pico_url, json=data, timeout=2)
+            logging.info("Pico response: %s", res.status_code)
+        else:
+            logging.info("非テキストメッセージを受信しました")
+    except Exception as e:
+        logging.error("Error parsing message: %s", e)
+
+    return "OK", 200
