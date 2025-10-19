@@ -23,7 +23,7 @@ def callback():
             logging.info("LINE message: %s", message)
 
             # PicoのグローバルIP＋ポート7072に送信
-            pico_url = "http://117.74.28.188:8080"  # ← 最新のIPに置き換えてください
+            pico_url = "http://133.207.116.194:7072"  # ← 最新のIPに置き換えてください
             res = requests.post(pico_url, json=data, timeout=2)
             logging.info("Pico response: %s", res.status_code)
         else:
