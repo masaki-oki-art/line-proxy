@@ -1,34 +1,33 @@
-import logging
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import requests
-
-# ログ設定（Renderのログ画面に出力される）
-logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 
-@app.route("/", methods=["GET"])
-def index():
-    return "Render Flask is running"
+@app.route("/webhook", methods=["POST"])
+def webhook():
+    data = request.json
+    user_text = data["events"][0]["message"]["text"]
+    reply_token = data["events"][0]["replyToken"]
 
-@app.route("/callback", methods=["POST"])
-def callback():
-    data = request.get_json()
-    logging.info("Raw data: %s", data)
-
+    # Pico Wに指令を送信
     try:
-        event = data["events"][0]
-        if event["type"] == "message" and "text" in event["message"]:
-            message = event["message"]["text"]
-            logging.info("LINE message: %s", message)
-
-            # PicoのグローバルIP＋ポート7072に送信
-            pico_url = "http://133.207.116.194:7072"  # ← 最新のIPに置き換えてください
-            res = requests.post(pico_url, json=data, timeout=5)
-            logging.info("Pico response: %s", res.status_code)
+        res = requests.post("http://192.168.1.16/control", json={"text": user_text}, timeout=3)
+        if res.status_code == 200:
+            reply_text = "Pico Wに指令を送信しました"
         else:
-            logging.info("非テキストメッセージを受信しました")
+            reply_text = f"Pico Wが応答しませんでした（コード: {res.status_code}） "
     except Exception as e:
-        logging.error("Error parsing message: %s", e)
+        reply_text = f"Pico Wへの送信に失敗しました\nエラー: {str(e)}"
 
-    return "OK", 200
+    # LINEに返信
+    headers = {
+        "Authorization": "Bearer rrH3WhwKaEfMmKZonTs95+4OZIj1GxObEHCEugdrJUzDPRaNDigD3lPAQNbZojMgjA8Pd599qrRxl6cYLXVU8GWHQRmAudHAEvzT2juBRX2Cur1GFJ9MFINSdNJK/C1G8y6vqdjfpyFWaLg5kxM3hgdB04t89/1O/w1cDnyilFU=",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "replyToken": reply_token,
+        "messages": [{"type": "text", "text": reply_text}]
+    }
+    requests.post("https://api.line.me/v2/bot/message/reply", headers=headers, json=payload)
+
+    return "OK"
