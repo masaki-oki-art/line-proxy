@@ -6,8 +6,17 @@ app = Flask(__name__)
 @app.route("/webhook", methods=["POST"])
 def webhook():
     data = request.json
-    user_text = data["events"][0]["message"]["text"]
-    reply_token = data["events"][0]["replyToken"]
+
+    # LINEのWebhook検証リクエストには events が含まれない場合がある
+    if "events" not in data or len(data["events"]) == 0:
+        return "OK", 200
+
+    event = data["events"][0]
+    if event["type"] != "message" or "text" not in event["message"]:
+        return "OK", 200
+
+    user_text = event["message"]["text"]
+    reply_token = event["replyToken"]
 
     # Pico Wに指令を送信
     try:
@@ -15,7 +24,7 @@ def webhook():
         if res.status_code == 200:
             reply_text = "Pico Wに指令を送信しました"
         else:
-            reply_text = f"Pico Wが応答しませんでした（コード: {res.status_code}） "
+            reply_text = f"Pico Wが応答しませんでした（コード: {res.status_code}）"
     except Exception as e:
         reply_text = f"Pico Wへの送信に失敗しました\nエラー: {str(e)}"
 
@@ -30,4 +39,4 @@ def webhook():
     }
     requests.post("https://api.line.me/v2/bot/message/reply", headers=headers, json=payload)
 
-    return "OK"
+    return "OK", 200
