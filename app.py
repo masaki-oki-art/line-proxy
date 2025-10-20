@@ -1,42 +1,34 @@
 from flask import Flask, request
 import requests
+import os
 
 app = Flask(__name__)
 
-@app.route("/", methods=["GET", "HEAD"])
-def index():
-    return "OK", 200
+# LINEチャネルアクセストークン（環境変数から取得）
+LINE_TOKEN = os.environ.get("LINE_TOKEN")
 
-@app.route("/webhook", methods=["POST"])
-def webhook():
+# LINEユーザーID（Push通知先）← 固定でもOK、複数対応も可能
+USER_ID = os.environ.get("LINE_USER_ID")
+
+@app.route("/notify", methods=["POST"])
+def notify():
     data = request.json
-    if "events" not in data or len(data["events"]) == 0:
-        return "OK", 200
+    text = data.get("text", "通知内容なし")
 
-    event = data["events"][0]
-    if event["type"] != "message" or "text" not in event["message"]:
-        return "OK", 200
-
-    user_text = event["message"]["text"]
-    reply_token = event["replyToken"]
-
-    try:
-        res = requests.post("http://192.168.1.16/control", json={"text": user_text}, timeout=3)
-        if res.status_code == 200:
-            reply_text = "Pico Wに指令を送信しました"
-        else:
-            reply_text = f"Pico Wが応答しませんでした（コード: {res.status_code}）"
-    except Exception as e:
-        reply_text = f"Pico Wへの送信に失敗しました\nエラー: {str(e)}"
-
+    # LINE Push通知
     headers = {
-        "Authorization": "Bearer rrH3WhwKaEfMmKZonTs95+4OZIj1GxObEHCEugdrJUzDPRaNDigD3lPAQNbZojMgjA8Pd599qrRxl6cYLXVU8GWHQRmAudHAEvzT2juBRX2Cur1GFJ9MFINSdNJK/C1G8y6vqdjfpyFWaLg5kxM3hgdB04t89/1O/w1cDnyilFU=",
+        "Authorization": f"Bearer {LINE_TOKEN}",
         "Content-Type": "application/json"
     }
     payload = {
-        "replyToken": reply_token,
-        "messages": [{"type": "text", "text": reply_text}]
+        "to": USER_ID,
+        "messages": [{"type": "text", "text": text}]
     }
-    requests.post("https://api.line.me/v2/bot/message/reply", headers=headers, json=payload)
 
-    return "OK", 200
+    try:
+        res = requests.post("https://api.line.me/v2/bot/message/push", headers=headers, json=payload)
+        print("LINE Pushステータス:", res.status_code)
+        return {"status": "sent", "code": res.status_code}, 200
+    except Exception as e:
+        print("LINE送信エラー:", e)
+        return {"status": "error", "message": str(e)}, 500
