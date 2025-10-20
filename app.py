@@ -10,6 +10,10 @@ LINE_TOKEN = os.environ.get("LINE_TOKEN")
 # LINEユーザーID（Push通知先）← 固定でもOK、複数対応も可能
 USER_ID = os.environ.get("LINE_USER_ID")
 
+@app.route("/", methods=["GET", "HEAD"])
+def index():
+    return "Render Flask is running", 200
+
 @app.route("/notify", methods=["POST"])
 def notify():
     data = request.json
@@ -28,6 +32,7 @@ def notify():
     try:
         res = requests.post("https://api.line.me/v2/bot/message/push", headers=headers, json=payload)
         print("LINE Pushステータス:", res.status_code)
+        print("LINE Pushレスポンス:", res.text)
         return {"status": "sent", "code": res.status_code}, 200
     except Exception as e:
         print("LINE送信エラー:", e)
