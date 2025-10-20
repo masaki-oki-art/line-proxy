@@ -11,7 +11,7 @@ app = Flask(__name__)
 def index():
     return "Render Flask is running"
 
-@app.route("/callback", methods=["POST"])
+@app.route("/notify", methods=["POST"])
 def callback():
     data = request.get_json()
     logging.info("Raw data: %s", data)
