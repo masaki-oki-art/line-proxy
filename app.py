@@ -1,55 +1,56 @@
-from flask import Flask, request, jsonify
+import logging
+from flask import Flask, request
 import requests
+
+# ログ設定（Renderのログ画面に出力される）
+logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 
-# LINE通知関数
-def send_line(text):
-    payload = {"message": text}
+# LINE通知関数（Render → LINE）
+def send_line_reply(reply_text):
+    payload = {"message": reply_text}
     headers = {"Host": "line-proxy-dkvy.onrender.com"}
 
     try:
         res = requests.post("https://line-proxy-dkvy.onrender.com/notify", json=payload, headers=headers, timeout=5)
-        print("LINE通知ステータス:", res.status_code)
+        logging.info("LINE通知ステータス: %s", res.status_code)
     except Exception as e:
-        print("LINE通知エラー:", e)
+        logging.error("LINE通知エラー: %s", e)
 
-# Pico Wへの送信処理
-def send_to_pico(message):
-    try:
-        res = requests.post("http://192.168.1.16:80", json={"message": message}, timeout=5)
-        print("Pico W応答ステータス:", res.status_code)
-        return res.status_code == 200
-    except Exception as e:
-        print("Pico W送信エラー:", e)
-        return False
-
-# LINEからのメッセージ受信エンドポイント
-@app.route("/notify", methods=["POST"])
-def notify():
-    try:
-        data = request.get_json()
-        message = data.get("message", "").strip()
-
-        print("LINE message:", message)
-
-        # Pico Wへ送信
-        success = send_to_pico(message)
-
-        # 成否に応じてLINE通知
-        if success:
-            send_line("送信OK")
-        else:
-            send_line("送信NG")
-
-        return jsonify({"status": "done"}), 200
-
-    except Exception as e:
-        print("全体処理エラー:", e)
-        send_line("送信NG")
-        return jsonify({"status": "error"}), 500
-
-# ヘルスチェック用
-@app.route("/", methods=["GET", "HEAD"])
+@app.route("/", methods=["GET"])
 def index():
-    return "Flask is running", 200
+    return "Render Flask is running"
+
+@app.route("/notify", methods=["POST"])
+def callback():
+    data = request.get_json()
+    logging.info("Raw data: %s", data)
+
+    try:
+        event = data["events"][0]
+        if event["type"] == "message" and "text" in event["message"]:
+            message = event["message"]["text"]
+            logging.info("LINE message: %s", message)
+
+            # PicoのグローバルIP＋ポート7072に送信
+            pico_url = "http://133.207.116.194:7072"  # ← 最新のIPに置き換えてください
+            try:
+                res = requests.post(pico_url, json=data, timeout=5)
+                logging.info("Pico response: %s", res.status_code)
+
+                if res.status_code == 200:
+                    send_line_reply("送信OK")
+                else:
+                    send_line_reply("送信NG")
+            except Exception as e:
+                logging.error("Pico W送信エラー: %s", e)
+                send_line_reply("送信NG")
+        else:
+            logging.info("非テキストメッセージを受信しました")
+            send_line_reply("未対応メッセージ")
+    except Exception as e:
+        logging.error("Error parsing message: %s", e)
+        send_line_reply("送信NG")
+
+    return "OK", 200
