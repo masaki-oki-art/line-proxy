@@ -36,7 +36,8 @@ def callback():
             res = requests.post(pico_url, json=data, timeout=30)
             logging.info("Pico response: %s", res.status_code)
             if res.status_code == 200:
-　　　　　　　　　　　　　　send_line_message("受信OK")
+                send_line_message("受信OK")
+                
         else:
             logging.info("非テキストメッセージを受信しました")
     except Exception as e:
