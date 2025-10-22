@@ -1,4 +1,5 @@
 import logging
+import threading
 from flask import Flask, request
 import requests
 
@@ -14,10 +15,14 @@ def send_line_message(text):
     headers = {"Content-Type": "application/json"}
     try:
         # 通知は /line-notify に送ることで /notify へのループを防ぐ
-        res = requests.post("http://line-proxy-dkvy.onrender.com/line-notify", json=payload, headers=headers, timeout=5)
+        res = requests.post("http://line-proxy-dkvy.onrender.com/line-notify", json=payload, headers=headers, timeout=10)
         logging.info("LINE通知ステータス: %s", res.status_code)
     except Exception as e:
         logging.error("LINE通知エラー: %s", e)
+
+# 非同期でLINE通知を送る関数
+def send_line_message_async(text):
+    threading.Thread(target=send_line_message, args=(text,)).start()
 
 # 動作確認用エンドポイント
 @app.route("/", methods=["GET"])
@@ -43,9 +48,9 @@ def callback():
                 res = requests.post(pico_url, json=data, timeout=30)
                 logging.info("Pico response: %s", res.status_code)
 
-                # Picoが200 OKを返したらLINE通知
+                # Picoが200 OKを返したらLINE通知（非同期）
                 if res.status_code == 200:
-                    send_line_message("Picoが正常に受信しました（200 OK）")
+                    send_line_message_async("Picoが正常に受信しました（200 OK）")
             else:
                 logging.info("非テキストメッセージを受信しました")
         else:
