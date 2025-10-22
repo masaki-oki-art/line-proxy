@@ -24,11 +24,12 @@ def callback():
 
             # PicoのグローバルIP＋ポート7072に送信
             pico_url = "http://133.207.116.194:7072"  # ← 最新のIPに置き換えてください
-            res = requests.post(pico_url, json=data, timeout=10)
+            res = requests.post(pico_url, json=data, timeout=30)
             logging.info("Pico response: %s", res.status_code)
         else:
             logging.info("非テキストメッセージを受信しました")
     except Exception as e:
         logging.error("Error parsing message: %s", e)
+
 
     return "OK", 200
