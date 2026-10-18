@@ -59,14 +59,6 @@ def callback():
                 # 🔵 Pico が取りに来れるように保存
                 latest_message = message
 
-                # Pico へ転送（あなたの既存処理）
-                pico_url = "http://219.104.161.13:7072"
-                res = requests.post(pico_url, json=data, timeout=30)
-                logging.info("Pico response: %s", res.status_code)
-
-                if res.status_code == 200:
-                    send_line_message_async(user_id, "Picoが正常に受信しました（200 OK）")
-
     except Exception as e:
         logging.error("Error parsing message: %s", e)
 
