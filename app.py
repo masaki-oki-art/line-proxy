@@ -6,9 +6,6 @@ import requests
 logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
 
-# 🔵 Pico が取りに来るメッセージ保存領域（必ず最上部）
-latest_message = None
-
 # LINE通知関数
 def send_line_message(user_id, text):
     headers = {
@@ -33,6 +30,14 @@ def send_line_message(user_id, text):
 def send_line_message_async(user_id, text):
     threading.Thread(target=send_line_message, args=(user_id, text)).start()
 
+# Pico が取りに来るメッセージ保存領域
+latest_message = None
+
+@app.route("/", methods=["GET"])
+def index():
+    return "Render Flask is running"
+
+# LINE Webhook
 @app.route("/notify", methods=["POST"])
 def callback():
     global latest_message
@@ -54,18 +59,12 @@ def callback():
                 # 🔵 Pico が取りに来れるように保存
                 latest_message = message
 
-                # 🔵 LINE に返信
-                send_line_message_async(user_id, "受信しました！Picoに転送します。")
-
     except Exception as e:
         logging.error("Error parsing message: %s", e)
 
     return "OK", 200
 
-@app.route("/", methods=["GET"])
-def index():
-    return "Render Flask is running"
-
+# 🔵 Pico がポーリングする API
 @app.route("/poll", methods=["GET"])
 def poll():
     global latest_message
