@@ -45,6 +45,7 @@ def index():
 def callback():
     data = request.get_json()
     logging.info("Raw data: %s", data)
+    return "OK", 200
 
     try:
         # LINE Webhook形式かどうかを判定
