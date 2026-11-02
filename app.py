@@ -113,13 +113,7 @@ def poll():
         "message": msg
     })
 
-#↓テスト
-@app.route("/test_push")
-def test_push():
 
-    send_line_push("Renderテスト")
-
-    return "OK"
 
 #↓line返送追加
 @app.route("/pico_notify", methods=["POST"])
